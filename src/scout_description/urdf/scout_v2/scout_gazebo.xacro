@@ -1,0 +1,62 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+	<!-- 인서트 가제보 라는 친구 -->
+    <xacro:macro name="insert_gazebo" params="prefix">
+        <gazebo>
+        <!--로스2 컨트롤러 디퍼런션 드라이버 (시엠디벨 토픽 같은) --> 
+            <plugin filename="libgazebo_ros2_control.so" name="gazebo_ros2_control">
+                <parameters>$(find scout_gazebo)/config/scout_controllers_gazebo.yaml</parameters>
+                <!-- output -->
+                <publish_odom>true</publish_odom>
+                <publish_odom_tf>true</publish_odom_tf>
+                <publish_wheel_tf>true</publish_wheel_tf>
+            </plugin>
+        </gazebo>
+
+        <!-- <gazebo reference="${prefix}front_left_wheel">
+            <mu1>0.1</mu1>
+            <mu2>0.1</mu2>
+            <kp>50000.0</kp>
+            <kd>10.0</kd>
+            <minDepth>0.001</minDepth>
+            <material>Gazebo/FlatBlack</material>
+        </gazebo>
+
+        <gazebo reference="${prefix}front_right_wheel">
+            <mu1>0.1</mu1>
+            <mu2>0.1</mu2>
+            <kp>50000.0</kp>
+            <kd>10.0</kd>
+            <minDepth>0.001</minDepth>
+            <material>Gazebo/FlatBlack</material>
+        </gazebo>
+
+                <gazebo reference="${prefix}rear_left_wheel">
+            <mu1>0.1</mu1>
+            <mu2>0.1</mu2>
+            <kp>50000.0</kp>
+            <kd>10.0</kd>
+            <minDepth>0.001</minDepth>
+            <material>Gazebo/FlatBlack</material>
+        </gazebo>
+
+        <gazebo reference="${prefix}rear_right_wheel">
+            <mu1>0.1</mu1>
+            <mu2>0.1</mu2>
+            <kp>50000.0</kp>
+            <kd>10.0</kd>
+            <minDepth>0.001</minDepth>
+            <material>Gazebo/FlatBlack</material>
+        </gazebo>
+
+        <gazebo reference="${prefix}base_link">
+            <mu1>0.0</mu1>
+            <mu2>0.0</mu2>
+        </gazebo> -->
+
+        
+             
+    </xacro:macro>
+
+</robot>

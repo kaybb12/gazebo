@@ -1,0 +1,573 @@
+<?xml version="1.0"?>
+<robot name="scout_v2" xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <xacro:arg name="robot_namespace" default="/" />    
+  <!-- 휠 매크로 및 공통 설정 파일들 -->
+  <xacro:include filename="$(find scout_description)/urdf/scout_v2/scout_wheel_type1.xacro" />
+  <xacro:include filename="$(find scout_description)/urdf/scout_v2/scout_wheel_type2.xacro" />
+  <xacro:include filename="$(find scout_description)/urdf/common/inertia_macro.xacro"/>   
+    
+  <!-- 변수 설정 -->
+  <xacro:property name="M_PI" value="3.14159"/>
+  <xacro:property name="base_x_size" value="0.925" />
+  <xacro:property name="base_y_size" value="0.38" />
+  <xacro:property name="base_z_size" value="0.21" />  
+  <xacro:property name="wheelbase" value="0.498" />
+  <xacro:property name="track" value="0.58306" />
+  <xacro:property name="wheel_vertical_offset" value="-0.0702" /> 
+  <xacro:property name="wheel_length" value="0.11653" />
+  <xacro:property name="wheel_radius" value="0.16459" />
+  <xacro:property name="cam_offset" value="0.05" />
+  <!-- 카메라 높이 (로봇 본체 중앙 높이) -->
+  <xacro:property name="cam_height" value="0.001" />
+
+  <!-- Base link -->
+  <link name="base_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://scout_description/meshes/scout_v2/base_link.dae" />
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0.008" rpy="0 0 0" />
+      <geometry>
+        <box size="${base_x_size} ${base_y_size} ${base_z_size}"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0 0 ${base_z_size/6}" rpy="0 0 0" />
+      <geometry>
+        <box size="${base_x_size/6} ${base_y_size*1.65} ${base_z_size/3}"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <link name="base_footprint"/>
+  
+  <joint name="base_link_joint" type="fixed">
+    <parent link="base_link" />
+    <child link="base_footprint" />
+    <origin xyz="0 0 ${wheel_vertical_offset - wheel_radius}" rpy="0 0 0" />
+  </joint>
+  
+  <link name="inertial_link">
+    <inertial>
+      <mass value="40" />
+      <origin xyz="0 0 0" />
+      <inertia ixx="2.288641" ixy="0" ixz="0" iyy="5.103976" iyz="0" izz="3.431465" />
+    </inertial>
+  </link>
+
+  <joint name="inertial_joint" type="fixed">
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <parent link="base_link" />
+    <child link="inertial_link" />
+  </joint>
+  
+  <!-- 휠 매크로 -->
+  <xacro:scout_wheel_type1 wheel_prefix="front_right">
+    <origin xyz="${wheelbase/2} ${-track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
+  </xacro:scout_wheel_type1>
+  <xacro:scout_wheel_type2 wheel_prefix="front_left">
+    <origin xyz="${wheelbase/2} ${track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
+  </xacro:scout_wheel_type2>
+  <xacro:scout_wheel_type1 wheel_prefix="rear_left">
+    <origin xyz="${-wheelbase/2} ${track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
+  </xacro:scout_wheel_type1>
+  <xacro:scout_wheel_type2 wheel_prefix="rear_right">
+    <origin xyz="${-wheelbase/2} ${-track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
+  </xacro:scout_wheel_type2>
+
+  <!-- 카메라 센서들 -->
+  <!-- Front Camera -->
+  <link name="front_camera_link">
+    <inertial>
+      <mass value="0.5"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.005" ixy="0" ixz="0" iyy="0.005" iyz="0" izz="0.005"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <box size="0.05 0.05 0.05"/>
+      </geometry>
+      <material name="">
+        <color rgba="0.1 0.8 0.1 1"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.05 0.05 0.05"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="front_camera_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="front_camera_link"/>
+    <origin xyz="0.5125 0 ${cam_height}" rpy="0 0 0"/>
+  </joint>
+  <gazebo reference="front_camera_link">
+    <sensor name="front_camera_sensor" type="camera">
+      <pose>0 0 0 0 0 0</pose>
+      <update_rate>30</update_rate>
+      <camera>
+        <horizontal_fov>1.3962634</horizontal_fov>
+        <image>
+          <width>640</width>
+          <height>480</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.1</near>
+          <far>100</far>
+        </clip>
+      </camera>
+      <plugin filename="libgazebo_ros_camera.so" name="gazebo_ros_camera_controller_front">
+        <ros>
+          <namespace>/front_camera</namespace>
+        </ros>
+        <cameraName>front_camera_sensor</cameraName>
+        <frameName>front_camera_link</frameName>
+      </plugin>
+    </sensor>
+  </gazebo>
+
+  <!-- Back Camera -->
+  <link name="back_camera_link">
+    <inertial>
+      <mass value="0.5"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.005" ixy="0" ixz="0" iyy="0.005" iyz="0" izz="0.005"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <box size="0.05 0.05 0.05"/>
+      </geometry>
+      <material name="">
+        <color rgba="0.1 0.8 0.1 1"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.05 0.05 0.05"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="back_camera_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="back_camera_link"/>
+    <origin xyz="-0.5125 0 ${cam_height}" rpy="0 0 ${M_PI}"/>
+  </joint>
+  <gazebo reference="back_camera_link">
+    <sensor name="back_camera_sensor" type="camera">
+      <pose>0 0 0 0 0 0</pose>
+      <update_rate>30</update_rate>
+      <camera>
+        <horizontal_fov>1.3962634</horizontal_fov>
+        <image>
+          <width>640</width>
+          <height>480</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.1</near>
+          <far>100</far>
+        </clip>
+      </camera>
+      <plugin filename="libgazebo_ros_camera.so" name="gazebo_ros_camera_controller_back">
+        <ros>
+          <namespace>/back_camera</namespace>
+        </ros>
+        <cameraName>back_camera_sensor</cameraName>
+        <frameName>back_camera_link</frameName>
+      </plugin>
+    </sensor>
+  </gazebo>
+
+  <!-- Left Camera -->
+  <link name="left_camera_link">
+    <inertial>
+      <mass value="0.5"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.005" ixy="0" ixz="0" iyy="0.005" iyz="0" izz="0.005"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <box size="0.05 0.05 0.05"/>
+      </geometry>
+      <material name="">
+        <color rgba="0.1 0.8 0.1 1"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.05 0.05 0.05"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_camera_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="left_camera_link"/>
+    <origin xyz="0 ${base_y_size/2 + cam_offset} ${cam_height}" rpy="0 0 ${M_PI/2}"/>
+  </joint>
+  <gazebo reference="left_camera_link">
+    <sensor name="left_camera_sensor" type="camera">
+      <pose>0 0 0 0 0 0</pose>
+      <update_rate>30</update_rate>
+      <camera>
+        <horizontal_fov>1.3962634</horizontal_fov>
+        <image>
+          <width>640</width>
+          <height>480</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.1</near>
+          <far>100</far>
+        </clip>
+      </camera>
+      <plugin filename="libgazebo_ros_camera.so" name="gazebo_ros_camera_controller_left">
+        <ros>
+          <namespace>/left_camera</namespace>
+        </ros>
+        <cameraName>left_camera_sensor</cameraName>
+        <frameName>left_camera_link</frameName>
+      </plugin>
+    </sensor>
+  </gazebo>
+
+  <!-- Right Camera -->
+  <link name="right_camera_link">
+    <inertial>
+      <mass value="0.5"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.005" ixy="0" ixz="0" iyy="0.005" iyz="0" izz="0.005"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <box size="0.05 0.05 0.05"/>
+      </geometry>
+      <material name="">
+        <color rgba="0.1 0.8 0.1 1"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.05 0.05 0.05"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="right_camera_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="right_camera_link"/>
+    <origin xyz="0 ${-base_y_size/2 - cam_offset} ${cam_height}" rpy="0 0 ${-M_PI/2}"/>
+  </joint>
+  <gazebo reference="right_camera_link">
+    <sensor name="right_camera_sensor" type="camera">
+      <pose>0 0 0 0 0 0</pose>
+      <update_rate>30</update_rate>
+      <camera>
+        <horizontal_fov>1.3962634</horizontal_fov>
+        <image>
+          <width>640</width>
+          <height>480</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.1</near>
+          <far>100</far>
+        </clip>
+      </camera>
+      <plugin filename="libgazebo_ros_camera.so" name="gazebo_ros_camera_controller_right">
+        <ros>
+          <namespace>/right_camera</namespace>
+        </ros>
+        <cameraName>right_camera_sensor</cameraName>
+        <frameName>right_camera_link</frameName>
+      </plugin>
+    </sensor>
+  </gazebo>
+
+  <link name="os_base">
+    <!-- 비주얼 간단한 박스로 표현 (필요에 따라 실제 메쉬로 대체 가능) -->
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.2 0.2 0.1"/>
+      </geometry>
+      <material name="gray">
+        <color rgba="0.5 0.5 0.5 1.0"/>
+      </material>
+    </visual>
+    <!-- 충돌체 동일한 박스 형상 -->
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.2 0.2 0.1"/>
+      </geometry>
+    </collision>
+    <!-- 관성 값 (예시값) -->
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1.0"/>
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+    </inertial>
+  </link>
+
+  <!-- 센서 회전부 실제 레이 센서가 탑재되는 부분 (os_top) -->
+  <link name="os_top">
+    <!-- 비주얼 실린더 모양 (센서 상단부를 나타냄) -->
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.1" length="0.05"/>
+      </geometry>
+      <material name="white">
+        <color rgba="1 1 1 1"/>
+      </material>
+    </visual>
+    <!-- 충돌체 동일한 실린더 형상 -->
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.1" length="0.05"/>
+      </geometry>
+    </collision>
+    <!-- 관성 값 (예시값) -->
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="0.2"/>
+      <inertia ixx="0.005" ixy="0" ixz="0" iyy="0.005" iyz="0" izz="0.005"/>
+    </inertial>
+  </link>
+
+  <!-- 베이스와 센서 회전부를 연결하는 회전 조인트 -->
+  <joint name="os_rotation" type="revolute">
+    <!-- 베이스 링크에서 센서 탑으로 연결, 센서를 회전시켜 360° 스캔 구현 -->
+    <origin xyz="0 0 0.1" rpy="0 0 0"/>
+    <parent link="os_base"/>
+    <child link="os_top"/>
+    <axis xyz="0 0 1"/>
+    <!-- 제한은 필요에 따라 설정 (여기서는 전체 회전을 허용) -->
+    <limit effort="100.0" lower="-3.14" upper="3.14" velocity="1.0"/>
+  </joint>
+
+  <joint name="os_sensor_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="os_base"/>
+    <origin xyz="0.5125 0 0.07" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Gazebo 확장 센서 및 플러그인 설정 -->
+  <gazebo reference="os_top">
+    <sensor name="os_ray_sensor" type="ray">
+      <!-- 센서의 위치 및 자세 (필요에 따라 조정) -->
+      <pose>0 0 0 0 0 0</pose>
+      <!-- Ray 센서 파라미터 -->
+      <ray>
+        <scan>
+          <horizontal>
+            <!-- 수평 스캔 12개의 샘플, 전체 360° (-π ~ π) -->
+            <samples>12</samples>
+            <resolution>1.0</resolution>
+            <min_angle>-3.14</min_angle>
+            <max_angle>3.14</max_angle>
+          </horizontal>
+          <vertical>
+            <!-- 수직 스캔 2개의 샘플 (예시값, 보통 레이저는 단일 라인) -->
+            <samples>2</samples>
+            <resolution>1.0</resolution>
+            <!-- 극소각을 설정하여 사실상 수평 스캔에 가깝게 함 -->
+            <min_angle>-0.001</min_angle>
+            <max_angle>0</max_angle>
+          </vertical>
+        </scan>
+        <range>
+          <!-- 최소/최대 감지 범위와 해상도 -->
+          <min>0.05</min>
+          <max>50.0</max>
+          <resolution>0.01</resolution>
+        </range>
+      </ray>
+      <!-- block_laser 플러그인 realistic 점 구름과 함께 'ring' 정보를 포함 -->
+      <plugin name="gazebo_ros_laser" filename="libgazebo_ray_sensor.so">
+        <!-- 노이즈 (필요시 조정) -->
+        <gaussianNoise>0.00</gaussianNoise>
+        <!-- 항상 켜진 상태 -->
+        <alwaysOn>true</alwaysOn>
+        <!-- 업데이트 주기 (Hz) -->
+        <updateRate>100.0</updateRate>
+        <!-- ROS 토픽 이름 이후 이 토픽을 RViz에서 PointCloud2로 확인 -->
+        <topicName>/points</topicName>
+        <!-- 출력 프레임 이름 (TF에서 사용) -->
+        <frameName>os_top</frameName>
+      </plugin>
+      <!-- 센서 작동 관련 기타 설정 -->
+      <always_on>true</always_on>
+      <update_rate>100.0</update_rate>
+      <visualize>true</visualize>
+    </sensor>
+  </gazebo>
+
+  <!-- GNSS/IMU 센서 추가 - 센서의 최상위 링크(dummy_base)를 로봇의 base_link에 부착 -->
+  <joint name="robot_to_gnss" type="fixed">
+    <parent link="base_link"/>
+    <child link="dummy_base"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>    
+  <!-- 더미 루트 링크 (관성 없음) -->
+  <link name="dummy_base">
+    <visual>
+      <geometry>
+        <box size="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="dummy_material">
+         <color rgba="0 0 0 0"/>
+      </material>
+    </visual>
+  </link> 
+  <!-- 더미 루트와 GNSS 본체를 연결하는 고정 조인트 -->
+  <joint name="base_to_body" type="fixed">
+    <parent link="dummy_base"/>
+    <child link="gnss_body"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <gazebo>
+      <disable_ros_transmission>true</disable_ros_transmission>
+    </gazebo>
+  </joint>    
+  <!-- GNSS 본체 링크 -->
+  <link name="gnss_body">
+    <inertial>
+      <mass value="1.0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+    </inertial>
+    <visual>
+      <geometry>
+         <box size="0.2 0.1 0.05"/>
+      </geometry>
+      <material name="gnss_body_material">
+         <color rgba="0.1 0.1 0.8 1"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+         <box size="0.2 0.1 0.05"/>
+      </geometry>
+    </collision>
+  </link> 
+  <!-- 왼쪽 안테나 -->
+  <joint name="antenna1_joint" type="fixed">
+    <parent link="gnss_body"/>
+    <child link="gnss_antenna_left"/>
+    <origin xyz="0.05 0.05 0.1" rpy="0 0 0"/>
+    <gazebo>
+      <disable_ros_transmission>true</disable_ros_transmission>
+    </gazebo>
+  </joint>
+  <link name="gnss_antenna_left">
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+    </inertial>
+    <visual>
+      <geometry>
+         <cylinder radius="0.01" length="0.1"/>
+      </geometry>
+      <material name="gnss_antenna_left_material">
+         <color rgba="0.8 0.1 0.1 1"/>
+      </material>
+    </visual>
+  </link> 
+  <!-- 오른쪽 안테나 -->
+  <joint name="antenna2_joint" type="fixed">
+    <parent link="gnss_body"/>
+    <child link="gnss_antenna_right"/>
+    <origin xyz="0.05 -0.05 0.1" rpy="0 0 0"/>
+    <gazebo>
+      <disable_ros_transmission>true</disable_ros_transmission>
+    </gazebo>
+  </joint>
+  <link name="gnss_antenna_right">
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+    </inertial>
+    <visual>
+      <geometry>
+         <cylinder radius="0.01" length="0.1"/>
+      </geometry>
+      <material name="gnss_antenna_right_material">
+         <color rgba="0.8 0.1 0.1 1"/>
+      </material>
+    </visual>
+  </link> 
+  <!-- Gazebo 플러그인 왼쪽 GNSS 센서 (GPS/속도 데이터) -->
+  <gazebo reference="gnss_antenna_left">
+    <sensor type="gps" name="gnss_sensor_left">
+      <always_on>true</always_on>
+      <update_rate>5</update_rate>
+      <topic>/gnss/left/gazebo_ros_gps/out</topic>
+      <plugin name="gazebo_ros_gps_sensor" filename="libgazebo_ros_gps_sensor.so">
+         <ros>
+            <namespace>/gnss/left/gazebo_ros_gps</namespace>
+            <parameter name="reference_lat" value="37.4275"/>
+            <parameter name="reference_long" value="-122.1697"/>
+            <parameter name="reference_alt" value="30.0"/>
+         </ros>
+         <frame_id>gnss_antenna_left</frame_id>
+      </plugin>
+    </sensor>
+  </gazebo>   
+  <!-- Gazebo 플러그인 오른쪽 GNSS 센서 (GPS/속도 데이터) -->
+  <gazebo reference="gnss_antenna_right">
+    <sensor type="gps" name="gnss_sensor_right">
+      <always_on>true</always_on>
+      <update_rate>5</update_rate>
+      <topic>/gnss/right/gazebo_ros_gps/out</topic>
+      <plugin name="gazebo_ros_gps_sensor" filename="libgazebo_ros_gps_sensor.so">
+         <ros>
+            <namespace>/gnss/right/gazebo_ros_gps</namespace>
+            <parameter name="reference_lat" value="37.4275"/>
+            <parameter name="reference_long" value="-122.1697"/>
+            <parameter name="reference_alt" value="30.0"/>
+         </ros>
+         <frame_id>gnss_antenna_right</frame_id>
+      </plugin>
+    </sensor>
+  </gazebo>   
+  <!-- Gazebo 플러그인 IMU 센서 (GNSS 본체에 부착) -->
+  <gazebo reference="gnss_body">
+    <sensor type="imu" name="gnss_imu_sensor">
+      <always_on>true</always_on>
+      <update_rate>50</update_rate>
+      <imu>
+        <angular_velocity>
+          <noise type="gaussian">
+            <mean>0.0</mean>
+            <stddev>0.01</stddev>
+          </noise>
+        </angular_velocity>
+        <linear_acceleration>
+          <noise type="gaussian">
+            <mean>0.0</mean>
+            <stddev>0.01</stddev>
+          </noise>
+        </linear_acceleration>
+      </imu>
+      <plugin name="gazebo_ros_imu_sensor" filename="libgazebo_ros_imu_sensor.so">
+         <ros>
+            <namespace>/gnss/imu</namespace>
+            <remapping>~/out:=data</remapping>
+         </ros>
+         <frameName>gnss_body</frameName>
+      </plugin>
+    </sensor>
+  </gazebo>
+
+  <xacro:include filename="$(find scout_description)/urdf/scout_v2/scout_gazebo.xacro"/>
+  <xacro:include filename="$(find scout_description)/urdf/scout_v2/scout_ros2_control.xacro"/>
+
+</robot>

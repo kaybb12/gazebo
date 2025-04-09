@@ -1,0 +1,69 @@
+<?xml version="1.0"?>
+<robot name="camera_sensor" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- 기본 링크 (base_link)를 정의하고 카메라를 연결 -->
+  <link name="base_link">
+    <inertial>
+      <mass value="1.0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+    </inertial>
+  </link>
+
+  <!-- 카메라 링크 -->
+  <joint name="camera_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="camera_link"/>
+    <!-- 원하는 위치에 카메라 배치 (예: 높이 1.0m) -->
+    <origin xyz="0.1 0 1.0" rpy="0 0 0"/>
+  </joint>
+
+  <link name="camera_link">
+    <inertial>
+      <mass value="0.5"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.005" ixy="0" ixz="0" iyy="0.005" iyz="0" izz="0.005"/>
+    </inertial>
+    <visual>
+      <geometry>
+         <box size="0.1 0.1 0.1"/>
+      </geometry>
+      <material name="">
+         <color rgba="0.1 0.8 0.1 1"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+         <box size="0.1 0.1 0.1"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- Gazebo 카메라 센서 정의 -->
+  <gazebo reference="camera_link">
+    <sensor type="camera" name="camera_sensor">
+      <pose>0 0 0 0 0 0</pose>
+      <update_rate>30</update_rate>
+      <camera>
+         <horizontal_fov>1.3962634</horizontal_fov>
+         <image>
+           <width>640</width>
+           <height>480</height>
+           <format>R8G8B8</format>
+         </image>
+         <clip>
+           <near>0.1</near>
+           <far>100</far>
+         </clip>
+      </camera>
+      <plugin name="gazebo_ros_camera_controller" filename="libgazebo_ros_camera.so">
+         <ros>
+            <namespace>/camera</namespace>
+         </ros>
+         <cameraName>camera_sensor</cameraName>
+         <frameName>camera_link</frameName>
+      </plugin>
+    </sensor>
+  </gazebo>
+
+</robot>

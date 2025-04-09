@@ -1,0 +1,163 @@
+<?xml version="1.0"?>
+<robot name="gnss_imu_sensor" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- 더미 루트 링크 (관성 없음) -->
+  <link name="dummy_base">
+    <visual>
+      <geometry>
+        <box size="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="dummy_material">
+         <color rgba="0 0 0 0"/>
+      </material>
+    </visual>
+  </link>
+
+  <!-- 더미 루트와 GNSS 본체를 연결하는 고정 조인트 -->
+  <joint name="base_to_body" type="fixed">
+    <parent link="dummy_base"/>
+    <child link="gnss_body"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <gazebo>
+      <disable_ros_transmission>true</disable_ros_transmission>
+    </gazebo>
+  </joint>
+
+  <!-- GNSS 본체 링크 -->
+  <link name="gnss_body">
+    <inertial>
+      <mass value="1.0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+    </inertial>
+    <visual>
+      <geometry>
+         <box size="0.2 0.1 0.05"/>
+      </geometry>
+      <material name="gnss_body_material">
+         <color rgba="0.1 0.1 0.8 1"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+         <box size="0.2 0.1 0.05"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- 왼쪽 안테나 -->
+  <joint name="antenna1_joint" type="fixed">
+    <parent link="gnss_body"/>
+    <child link="gnss_antenna_left"/>
+    <origin xyz="0.05 0.05 0.1" rpy="0 0 0"/>
+    <gazebo>
+      <disable_ros_transmission>true</disable_ros_transmission>
+    </gazebo>
+  </joint>
+  <link name="gnss_antenna_left">
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+    </inertial>
+    <visual>
+      <geometry>
+         <cylinder radius="0.01" length="0.1"/>
+      </geometry>
+      <material name="gnss_antenna_left_material">
+         <color rgba="0.8 0.1 0.1 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <!-- 오른쪽 안테나 -->
+  <joint name="antenna2_joint" type="fixed">
+    <parent link="gnss_body"/>
+    <child link="gnss_antenna_right"/>
+    <origin xyz="0.05 -0.05 0.1" rpy="0 0 0"/>
+    <gazebo>
+      <disable_ros_transmission>true</disable_ros_transmission>
+    </gazebo>
+  </joint>
+  <link name="gnss_antenna_right">
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+    </inertial>
+    <visual>
+      <geometry>
+         <cylinder radius="0.01" length="0.1"/>
+      </geometry>
+      <material name="gnss_antenna_right_material">
+         <color rgba="0.8 0.1 0.1 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <!-- Gazebo 플러그인: 왼쪽 GNSS 센서 (GPS/속도 데이터) -->
+  <gazebo reference="gnss_antenna_left">
+    <sensor type="gps" name="gnss_sensor_left">
+      <always_on>true</always_on>
+      <update_rate>5</update_rate>
+      <topic>/gnss/left/gazebo_ros_gps/out</topic>
+      <plugin name="gazebo_ros_gps_sensor" filename="libgazebo_ros_gps_sensor.so">
+         <ros>
+            <namespace>/gnss/left/gazebo_ros_gps</namespace>
+            <parameter name="reference_lat" value="37.4275"/>
+            <parameter name="reference_long" value="-122.1697"/>
+            <parameter name="reference_alt" value="30.0"/>
+         </ros>
+         <frame_id>gnss_antenna_left</frame_id>
+      </plugin>
+    </sensor>
+  </gazebo>
+
+  <!-- Gazebo 플러그인: 오른쪽 GNSS 센서 (GPS/속도 데이터) -->
+  <gazebo reference="gnss_antenna_right">
+    <sensor type="gps" name="gnss_sensor_right">
+      <always_on>true</always_on>
+      <update_rate>5</update_rate>
+      <topic>/gnss/right/gazebo_ros_gps/out</topic>
+      <plugin name="gazebo_ros_gps_sensor" filename="libgazebo_ros_gps_sensor.so">
+         <ros>
+            <namespace>/gnss/right/gazebo_ros_gps</namespace>
+            <parameter name="reference_lat" value="37.4275"/>
+            <parameter name="reference_long" value="-122.1697"/>
+            <parameter name="reference_alt" value="30.0"/>
+         </ros>
+         <frame_id>gnss_antenna_right</frame_id>
+      </plugin>
+    </sensor>
+  </gazebo>
+
+  <!-- Gazebo 플러그인: IMU 센서 (GNSS 본체에 부착) -->
+  <gazebo reference="gnss_body">
+    <sensor type="imu" name="gnss_imu_sensor">
+      <always_on>true</always_on>
+      <update_rate>50</update_rate>
+      <imu>
+        <angular_velocity>
+          <noise type="gaussian">
+            <mean>0.0</mean>
+            <stddev>0.01</stddev>
+          </noise>
+        </angular_velocity>
+        <linear_acceleration>
+          <noise type="gaussian">
+            <mean>0.0</mean>
+            <stddev>0.01</stddev>
+          </noise>
+        </linear_acceleration>
+      </imu>
+      <plugin name="gazebo_ros_imu_sensor" filename="libgazebo_ros_imu_sensor.so">
+         <ros>
+            <namespace>/gnss/imu</namespace>
+            <remapping>~/out:=data</remapping>
+         </ros>
+         <frameName>gnss_body</frameName>
+      </plugin>
+    </sensor>
+  </gazebo>
+
+</robot>
